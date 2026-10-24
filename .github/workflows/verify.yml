@@ -1,0 +1,30 @@
+name: verify input label fix
+# Runs Cal.diy's input tests on two commits of fix/input-field-label-id, as the repo's own
+# unit-test workflow does: the new tests alone (expected to fail) and tests plus fix (expected to pass).
+on: push
+permissions:
+  contents: read
+jobs:
+  test:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "tests only (expected to fail)"
+            ref: 8092220bad07541d56ee8eb52196d2d5bcbdc055
+          - label: "tests and fix (expected to pass)"
+            ref: a5bb84000471ac622d07c95ab4c3884bf920965c
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: sroay/cal.diy
+          ref: ${{ matrix.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: corepack enable && yarn install
+      - run: yarn prisma generate
+      - run: yarn test -- packages/ui/components/form/inputs/input.test.tsx
